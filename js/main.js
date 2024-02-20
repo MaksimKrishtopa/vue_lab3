@@ -134,6 +134,32 @@ Vue.component('add-task-form', {
 });
 
 // Обновленный компонент для первого столбца
+Vue.component('planned-tasks-column', {
+  props: ['tasks'],
+  methods: {
+    createTask(newTask) {
+      this.$emit('create-task', newTask);
+    },
+    deleteTask(taskId) {
+      this.$emit('delete-task', taskId);
+    },
+  },
+  template: `
+    <div class="board-column">
+      <h2>Planned Tasks</h2>
+      <add-task-form @create-task="createTask" />
+      <div v-for="task in tasks" :key="task.id">
+        <task-card
+          :task="task"
+          @update-task="$emit('update-task', $event)"
+          @move-to-in-progress="$emit('move-to-in-progress', $event)"
+          @delete-task="deleteTask"
+          @return-to-in-progress="returnToInProgress"
+        />
+      </div>
+    </div>
+  `,
+});
 
 
 
