@@ -78,9 +78,9 @@ Vue.component('task-card', {
       <p>{{ task.description }}</p>
       <p>Deadline: {{ task.deadline }}</p>
       <p>Last Edited: {{ task.lastEdited }}</p>
-      
+      <p>Status: {{ taskStatus === 'overdue' ? 'Overdue' : 'On Time' }}</p>
       <button v-if="!isEditing && !isInDoneColumn" @click="startEditing">Edit</button>
-      <button v-if="!isEditing " @click="deleteTask">Delete</button>
+      <button v-if="!isEditing && $parent.title !== 'In Progress' && $parent.title !== 'Testing' && $parent.title !== 'Done'" @click="deleteTask">Delete</button>
 
       <button v-if="!$parent.title || $parent.title === 'Planned Tasks'" @click="$emit('move-to-in-progress', task)">Move to In Progress</button>
       <button v-if="$parent.title === 'Testing' && !isReturning" @click="isReturning = true">Return to In Progress</button>
