@@ -38,3 +38,15 @@ button {
     text-transform: uppercase;
     cursor: pointer;
 }
+
+.task-card h3.overdue {
+    color: red;
+  }
+  
+  .task-card p.overdue {
+    color: red;
+  }
+  
+  .task-card p.on-time {
+    color: green;
+  }
