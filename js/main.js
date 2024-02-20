@@ -1,5 +1,5 @@
 Vue.component('task-card', {
-  props: ['task'],
+  props: ['task', 'selectedTaskId', 'isFoundTask'],
   data() {
     return {
       isEditing: false,
@@ -63,6 +63,10 @@ Vue.component('task-card', {
       }
     },
 
+    isTaskFoundInSearch() {
+      return this.$parent.selectedTaskId === this.task.id && this.$parent.filteredTasks.length > 0;
+    },
+
     isInDoneColumn() {
       return this.$parent.title === 'Done';
     },
@@ -73,7 +77,8 @@ Vue.component('task-card', {
   },
 
   template: `
-    <div class="task-card">
+    <div class="task-card" :class="{ 'selected-task': task.id === selectedTaskId, 'found-task': isFoundTask }">
+
       <div v-if="!isEditing">
         <h3 :class="{ 'overdue': taskStatus === 'overdue', 'on-time': taskStatus === 'onTime' }">{{ task.title }}</h3>
         <p>{{ task.description }}</p>
@@ -164,7 +169,7 @@ Vue.component('planned-tasks-column', {
 });
 
 Vue.component('board-column', {
-  props: ['title', 'tasks'],
+  props: ['title', 'tasks', 'selectedTaskId'],
   methods: {
     moveToTesting(task) {
       this.$emit('move-to-testing', task);
@@ -201,6 +206,7 @@ Vue.component('kanban-board', {
       inProgressTasks: [],
       testingTasks: [],
       doneTasks: [],
+      selectedTaskId: null,
     };
   },
 
@@ -221,28 +227,41 @@ Vue.component('kanban-board', {
     },
 
     moveToInProgress(task) {
-      this.inProgressTasks.push(task);
-      this.plannedTasks = this.plannedTasks.filter(t => t.id !== task.id);
+      const index = this.plannedTasks.findIndex(t => t.id === task.id);
+  
+      if (index !== -1) {
+        this.inProgressTasks.push(this.plannedTasks[index]);
+        this.$delete(this.plannedTasks, index); 
+      }
     },
 
     moveToTesting(task) {
-      this.testingTasks.push(task);
-      this.inProgressTasks = this.inProgressTasks.filter(t => t.id !== task.id);
+      const index = this.inProgressTasks.findIndex(t => t.id === task.id);
+    
+      if (index !== -1) {
+        this.testingTasks.push(this.inProgressTasks[index]);
+        this.$delete(this.inProgressTasks, index);
+      }
     },
 
     moveToDone(task) {
-      const today = new Date();
-      const deadlineDate = new Date(task.deadline);
+      const index = this.testingTasks.findIndex(t => t.id === task.id);
     
-      if (today > deadlineDate) {
-        task.status = 'overdue';
-      } else {
-        task.status = 'onTime';
+      if (index !== -1) {
+        const today = new Date();
+        const deadlineDate = new Date(task.deadline);
+    
+        if (today > deadlineDate) {
+          task.status = 'overdue';
+        } else {
+          task.status = 'onTime';
+        }
+    
+        this.doneTasks.push(task);
+        this.$delete(this.testingTasks, index);
       }
-    
-      this.doneTasks.push(task);
-      this.testingTasks = this.testingTasks.filter(t => t.id !== task.id);
     },
+    
 
     deleteTask(taskId) {
       
@@ -264,12 +283,19 @@ Vue.component('kanban-board', {
         }
       }
     },
+
+    selectTaskFromSearch(taskId) {
+      this.selectedTaskId = taskId;
+    },
     
+    clearSelection() {
+      this.selectedTaskId = null;
+    },
   },
   template: `
   
   <div class="kanban-board">
-  
+  <search-bar @select-task="selectTaskFromSearch" @clear-selection="clearSelection" />
   <planned-tasks-column
     :tasks="plannedTasks"
     @update-task="updateTask"
@@ -290,6 +316,63 @@ Vue.component('kanban-board', {
     @return-to-in-progress="returnToInProgress"/>
   <board-column title="Done" :tasks="doneTasks"/>
 </div>
+  `,
+});
+
+
+
+Vue.component('search-bar', {
+  data() {
+    return {
+      searchQuery: '',
+      selectedTaskId: null,
+    };
+  },
+  methods: {
+    searchTasks() {
+      this.selectedTaskId = null;
+      this.$emit('clear-selection'); // Очищаем подсветку в родительском компоненте
+
+      // Поиск в каждой колонке
+      this.searchInColumn(this.$parent.plannedTasks);
+      this.searchInColumn(this.$parent.inProgressTasks);
+      this.searchInColumn(this.$parent.testingTasks);
+      this.searchInColumn(this.$parent.doneTasks);
+    },
+    searchInColumn(column) {
+      for (const task of column) {
+        if (task.title.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+          this.selectedTaskId = task.id;
+          this.$emit('select-task', task.id); // Эмитируем выбранный идентификатор задачи в родительский компонент
+          break; // Прерываем цикл при первом найденном элементе
+        }
+      }
+    },
+    clearSearch() {
+      this.searchQuery = '';
+      this.selectedTaskId = null;
+      this.$emit('clear-selection'); // Очищаем подсветку в родительском компоненте
+    },
+    selectTask(task) {
+      this.selectedTaskId = task.id;
+      this.$emit('select-task', task.id); // Эмитируем выбранный идентификатор задачи в родительский компонент
+    },
+  },
+  template: `
+    <div class="search-bar">
+      <input v-model="searchQuery" @input="searchTasks" placeholder="Search tasks">
+      <div v-if="selectedTaskId !== null">
+        <p>Found task:</p>
+        <ul>
+          <li v-for="task in $parent.plannedTasks.concat($parent.inProgressTasks, $parent.testingTasks, $parent.doneTasks)" 
+              :key="task.id"
+              @click="selectTask(task)">
+            <task-card :task="task" :selectedTaskId="selectedTaskId" :isFoundTask="task.id === selectedTaskId && task.title.toLowerCase().includes(searchQuery.toLowerCase())" />
+          </li>
+        </ul>
+        <button @click="clearSearch">Clear Search</button>
+      </div>
+    </div>
   `,
 });
 

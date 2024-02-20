@@ -50,3 +50,12 @@ button {
   .task-card p.on-time {
     color: green;
   }
+
+  .found-task {
+    background-color: #ee1568; /* Измените цвет фона на ваш выбор */
+    font-weight: bold; /* Жирный шрифт для выделения */
+    /* Другие стили по вашему желанию */
+    border: 1px solid red;
+  }
+  
+
