@@ -161,6 +161,132 @@ Vue.component('planned-tasks-column', {
   `,
 });
 
+Vue.component('board-column', {
+  props: ['title', 'tasks'],
+  methods: {
+    moveToTesting(task) {
+      this.$emit('move-to-testing', task);
+    },
+    moveToDone(task) {
+      this.$emit('move-to-done', task);
+    },
+    returnToInProgress(payload) {
+      this.$emit('return-to-in-progress', payload);
+    },
+  },
+  template: `
+  <div class="board-column">
+  <h2>{{ title }}</h2>
+  <div v-for="task in tasks" :key="task.id">
+    <task-card
+      :task="task"
+      @update-task="$emit('update-task', $event)"
+      @move-to-in-progress="$emit('move-to-in-progress', $event)"
+      @return-to-in-progress="returnToInProgress"
+    />
+    <button v-if="title === 'In Progress'" @click="moveToTesting(task)">Move to Testing</button>
+    <button v-if="title === 'Testing'" @click="moveToDone(task)">Move to Done</button>
+  </div>
+</div>
+  `,
+});
+
+
+Vue.component('kanban-board', {
+  data() {
+    return {
+      plannedTasks: [],
+      inProgressTasks: [],
+      testingTasks: [],
+      doneTasks: [],
+    };
+  },
+  methods: {
+    createTask(newTask) {
+      this.plannedTasks.push({
+        id: this.plannedTasks.length + 1,
+        ...newTask,
+      });
+    },
+    updateTask(updatedTask) {
+      const index = this.plannedTasks.findIndex(task => task.id === updatedTask.id);
+      if (index !== -1) {
+        this.plannedTasks.splice(index, 1, updatedTask);
+      }
+    },
+    moveToInProgress(task) {
+      this.inProgressTasks.push(task);
+      this.plannedTasks = this.plannedTasks.filter(t => t.id !== task.id);
+    },
+    moveToTesting(task) {
+      this.testingTasks.push(task);
+      this.inProgressTasks = this.inProgressTasks.filter(t => t.id !== task.id);
+    },
+    moveToDone(task) {
+      const today = new Date();
+      const deadlineDate = new Date(task.deadline);
+    
+      if (today > deadlineDate) {
+        task.status = 'overdue';
+      } else {
+        task.status = 'onTime';
+      }
+    
+      this.doneTasks.push(task);
+      this.testingTasks = this.testingTasks.filter(t => t.id !== task.id);
+    },
+
+    deleteTask(taskId) {
+      
+      this.plannedTasks = this.plannedTasks.filter(task => task.id !== taskId);
+
+    },
+
+    returnToInProgress(payload) {
+      const task = payload.task;
+      const returnReason = payload.returnReason;
+    
+      if (this.testingTasks.some(t => t.id === task.id)) {
+        if (returnReason.trim() !== '') {
+          this.testingTasks = this.testingTasks.filter(t => t.id !== task.id);
+          task.returnReason = returnReason;
+          this.inProgressTasks.push(task);
+        } else {
+          alert('Please provide a return reason.');
+        }
+      }
+    },
+    
+  },
+  template: `
+  
+  <div class="kanban-board">
+  
+  <planned-tasks-column
+    :tasks="plannedTasks"
+    @update-task="updateTask"
+    @move-to-in-progress="moveToInProgress"
+    @create-task="createTask"
+    @delete-task="deleteTask"
+  />
+  <board-column
+    title="In Progress"
+    :tasks="inProgressTasks"
+    @update-task="updateTask"
+    @move-to-testing="moveToTesting"
+  />
+  <board-column
+  
+    title="Testing"
+    :tasks="testingTasks"
+    @update-task="updateTask"
+    @move-to-done="moveToDone"
+    @return-to-in-progress="returnToInProgress"
+  />
+  <board-column title="Done" :tasks="doneTasks" />
+</div>
+  `,
+});
 
 
 
