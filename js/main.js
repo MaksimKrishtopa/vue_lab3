@@ -97,6 +97,43 @@ Vue.component('task-card', {
   </div>
 `,
 });
+// Обновленный компонент для формы создания задачи
+Vue.component('add-task-form', {
+  data() {
+    return {
+      newTaskTitle: '',
+      newTaskDescription: '',
+      newTaskDeadline: '',
+    };
+  },
+  methods: {
+    createTask() {
+      if (this.newTaskTitle.trim() !== '') {
+        this.$emit('create-task', {
+          title: this.newTaskTitle,
+          description: this.newTaskDescription,
+          deadline: this.newTaskDeadline,
+          lastEdited: new Date().toLocaleString(), // Временной штамп создания
+        });
+
+        // Очистка полей после создания задачи
+        this.newTaskTitle = '';
+        this.newTaskDescription = '';
+        this.newTaskDeadline = '';
+      }
+    },
+  },
+  template: `
+    <div class="add-task-form">
+      <input v-model="newTaskTitle" placeholder="Title">
+      <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+      <input type="date" v-model="newTaskDeadline">
+      <button @click="createTask">Create Task</button>
+    </div>
+  `,
+});
+
+// Обновленный компонент для первого столбца
 
 
 
