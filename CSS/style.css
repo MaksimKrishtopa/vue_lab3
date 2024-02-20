@@ -1,0 +1,32 @@
+body {
+    font-family: tahoma;
+    color:#282828;
+    margin: 0px;
+    background-image: url(/CSS/6a1a8724c5bb880ee1c1f3b50e69d425.jpg);
+}
+
+.kanban-board {
+    display: flex;
+    justify-content: space-between;
+    margin: 50px;
+    
+}
+
+.board-column {
+    margin-left: 125px;
+    display: flex;
+    flex-direction: column;
+    border: 6px solid #dfbdbd;
+    padding: 15px;
+    background-color: #ff844c;
+}
+
+.add-task-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.add-task-form input,button,textarea{
+    margin-top: 15px;
+}
